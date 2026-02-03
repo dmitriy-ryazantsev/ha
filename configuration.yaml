@@ -13,7 +13,7 @@ homeassistant:
 automation: !include_dir_merge_list automations/
 
 # Scripts - merge UI and modular files  
-script: !include_dir_merge_list scripts/
+script: !include_dir_merge_named scripts/
 
 # Scenes
 scene: !include scenes.yaml
