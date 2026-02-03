@@ -1,0 +1,22 @@
+# Home Assistant Configuration
+# https://www.home-assistant.io/
+
+# Configure a default set of components
+default_config:
+
+# Home Assistant core configuration
+homeassistant:
+  customize: !include customize.yaml
+  packages: !include_dir_named packages/
+
+# Automations - merge UI and modular files
+automation: !include_dir_merge_list automations/
+
+# Scripts - merge UI and modular files  
+script: !include_dir_merge_named scripts/
+
+# Scenes
+scene: !include scenes.yaml
+
+# Groups
+group: !include groups.yaml

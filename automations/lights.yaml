@@ -1,0 +1,26 @@
+# Example automation: Turn on lights at sunset
+- alias: "Lights on at sunset"
+  description: "Turn on all lights when the sun sets"
+  trigger:
+    - platform: sun
+      event: sunset
+      offset: "-00:30:00"
+  condition: []
+  action:
+    - service: light.turn_on
+      target:
+        entity_id: light.all_lights
+      data:
+        brightness_pct: 80
+
+# Example automation: Turn off lights at bedtime
+- alias: "Lights off at bedtime"
+  description: "Turn off all lights at a specific time"
+  trigger:
+    - platform: time
+      at: "23:00:00"
+  condition: []
+  action:
+    - service: light.turn_off
+      target:
+        entity_id: light.all_lights

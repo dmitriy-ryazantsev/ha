@@ -1,0 +1,12 @@
+# Scenes for Home Assistant
+# Define scenes here
+# Example:
+# - name: Movie Time
+#   entities:
+#     light.living_room:
+#       state: on
+#       brightness: 50
+#     media_player.tv:
+#       state: on
+
+[]

@@ -1,0 +1,50 @@
+# Example package: Bedroom configuration
+# This package contains all bedroom-related configuration
+
+# Sensors
+sensor:
+  - platform: template
+    sensors:
+      bedroom_temperature:
+        friendly_name: "Bedroom Temperature"
+        unit_of_measurement: "°F"
+        value_template: "{{ states('sensor.bedroom_climate_temperature') }}"
+
+# Automations
+automation:
+  - alias: "Bedroom lights on with motion"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.bedroom_motion
+        to: "on"
+    condition:
+      - condition: numeric_state
+        entity_id: sensor.bedroom_light_level
+        below: 10
+    action:
+      - service: light.turn_on
+        target:
+          entity_id: light.bedroom
+        data:
+          brightness_pct: 50
+
+# Scripts
+script:
+  bedroom_movie_mode:
+    alias: "Bedroom Movie Mode"
+    sequence:
+      - service: light.turn_on
+        target:
+          entity_id: light.bedroom
+        data:
+          brightness_pct: 10
+          rgb_color: [255, 100, 0]
+
+# Groups
+group:
+  bedroom_devices:
+    name: "Bedroom Devices"
+    entities:
+      - light.bedroom
+      - binary_sensor.bedroom_motion
+      - sensor.bedroom_temperature

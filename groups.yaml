@@ -1,0 +1,10 @@
+# Groups for Home Assistant
+# Define groups here
+# Example:
+# living_room_lights:
+#   name: Living Room Lights
+#   entities:
+#     - light.living_room_1
+#     - light.living_room_2
+
+{}

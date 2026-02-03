@@ -1,0 +1,5 @@
+# Automations managed via Home Assistant UI or manually defined
+# This file is typically managed by the Home Assistant automation editor
+# For manual automations, consider using the automations/ directory
+
+[]

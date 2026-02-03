@@ -1,0 +1,27 @@
+# Example automation: Notify on door open
+- alias: "Front door opened notification"
+  description: "Send notification when front door is opened"
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.front_door
+      to: "on"
+  condition: []
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "Door Alert"
+        message: "Front door has been opened"
+
+# Example automation: Notify when leaving home
+- alias: "Leaving home notification"
+  description: "Send notification when last person leaves"
+  trigger:
+    - platform: state
+      entity_id: group.all_persons
+      to: "not_home"
+  condition: []
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "Home Status"
+        message: "Everyone has left home"
