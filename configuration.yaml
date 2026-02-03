@@ -4,28 +4,19 @@
 # Configure a default set of components
 default_config:
 
-# Customizations
+# Home Assistant core configuration
 homeassistant:
   customize: !include customize.yaml
+  packages: !include_dir_named packages/
 
-# Automations
-automation: !include automations.yaml
+# Automations - merge UI and modular files
+automation: !include_dir_merge_list automations/
 
-# Scripts
-script: !include scripts.yaml
+# Scripts - merge UI and modular files  
+script: !include_dir_merge_list scripts/
 
 # Scenes
 scene: !include scenes.yaml
 
 # Groups
 group: !include groups.yaml
-
-# Include modular automation files from directory
-automation manual: !include_dir_merge_list automations/
-
-# Include modular script files from directory
-script manual: !include_dir_merge_list scripts/
-
-# Packages for modular configurations
-homeassistant:
-  packages: !include_dir_named packages/

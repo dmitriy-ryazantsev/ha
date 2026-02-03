@@ -7,16 +7,16 @@ This repository contains Home Assistant configuration files and automations for 
 ```
 .
 ├── configuration.yaml           # Main Home Assistant configuration file
-├── automations.yaml             # UI-managed automations
-├── scripts.yaml                 # Reusable script definitions
 ├── scenes.yaml                  # Scene definitions
 ├── groups.yaml                  # Group configurations
 ├── customize.yaml               # Entity customizations
 ├── secrets.yaml.example         # Template for sensitive data (copy to secrets.yaml)
-├── automations/                 # Modular automation files
+├── automations/                 # All automation files (UI + manual)
+│   ├── ui.yaml                 # UI-managed automations
 │   ├── lights.yaml             # Lighting automations
 │   └── notifications.yaml      # Notification automations
-├── scripts/                     # Modular script files
+├── scripts/                     # All script files (UI + manual)
+│   ├── ui.yaml                 # UI-managed scripts
 │   └── routines.yaml           # Daily routine scripts
 └── packages/                    # Feature-based configuration packages
     └── bedroom.yaml            # Bedroom-specific configuration
@@ -56,20 +56,20 @@ This repository contains Home Assistant configuration files and automations for 
 
 ### Main Configuration (`configuration.yaml`)
 
-The main entry point that includes all other configuration files using `!include` directives. This modular approach keeps configurations organized and maintainable.
+The main entry point that includes all other configuration files using `!include` directives. This modular approach keeps configurations organized and maintainable. All automations and scripts are loaded from their respective directories.
 
 ### Automations
 
-- **`automations.yaml`**: Managed by the Home Assistant UI automation editor. Avoid manual edits.
-- **`automations/`**: Manual automation files organized by functionality:
-  - `lights.yaml`: Lighting control automations
-  - `notifications.yaml`: Notification and alert automations
+All automation files are in the `automations/` directory and loaded automatically:
+- **`automations/ui.yaml`**: Managed by the Home Assistant UI automation editor
+- **`automations/lights.yaml`**: Lighting control automations
+- **`automations/notifications.yaml`**: Notification and alert automations
 
 ### Scripts
 
-Reusable sequences that can be called from automations or manually triggered:
-- **`scripts.yaml`**: UI-managed scripts
-- **`scripts/`**: Manual script definitions organized by purpose
+All script files are in the `scripts/` directory and loaded automatically:
+- **`scripts/ui.yaml`**: Managed by the Home Assistant UI
+- **`scripts/routines.yaml`**: Daily routine scripts
 
 ### Packages
 

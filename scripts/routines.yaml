@@ -35,4 +35,4 @@ good_night:
       target:
         entity_id: climate.bedroom
       data:
-        temperature: 68
+        temperature: 68  # Adjust to your preferred sleep temperature
