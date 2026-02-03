@@ -1,0 +1,8 @@
+# Entity customizations
+# Customize entity attributes here
+# Example:
+# light.living_room:
+#   friendly_name: "Living Room Main Light"
+#   icon: mdi:lightbulb
+
+{}
