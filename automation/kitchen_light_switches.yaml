@@ -1,0 +1,52 @@
+- id: kitchen_switches_state_sync
+  alias: "Kitchen switches - state sync"
+  mode: restart
+
+  trigger:
+    - platform: state
+      entity_id:
+        - switch.kitchen_main_light_switch
+        - switch.kitchen_sink_light_switch
+        - switch.kitchen_backyard_light_switch
+      to:
+        - "on"
+        - "off"
+
+  variables:
+    all_switches:
+      - switch.kitchen_main_light_switch
+      - switch.kitchen_sink_light_switch
+      - switch.kitchen_backyard_light_switch
+
+    desired: "{{ trigger.to_state.state }}"
+    trig: "{{ trigger.entity_id }}"
+
+    # Синхроним только тех, кто реально "не такой"
+    targets: >-
+      {{
+        expand(all_switches)
+        | rejectattr('entity_id', 'equalto', trig)
+        | selectattr('state', 'ne', desired)
+        | map(attribute='entity_id')
+        | list
+      }}
+
+  condition:
+    - condition: template
+      value_template: "{{ targets | length > 0 }}"
+
+  action:
+    # маленькая пауза, чтобы Netatmo/HA успели обновить state после триггера
+    - delay: "00:00:01"
+
+    - choose:
+        - conditions: "{{ desired == 'on' }}"
+          sequence:
+            - service: homeassistant.turn_on
+              target:
+                entity_id: "{{ targets }}"
+        - conditions: "{{ desired == 'off' }}"
+          sequence:
+            - service: homeassistant.turn_off
+              target:
+                entity_id: "{{ targets }}"

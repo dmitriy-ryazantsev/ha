@@ -1,0 +1,14 @@
+- id: master_restroom_autolight
+  alias: Master Restroom Autolight
+  description: ''
+  use_blueprint:
+    path: motion_light_switch_day_night.yaml
+    input:
+      motion_sensor: binary_sensor.master_restroom_ms_1_motion
+      use_custom_day_night_times: true
+      night_start_time: '21:00:00'
+      day_brightness: 100
+      primary_entities:
+      - light.master_restroom_light_dimmer
+      extra_off_entities:
+      - switch.master_restroom_fan_switch_1

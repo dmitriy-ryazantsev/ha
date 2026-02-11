@@ -1,0 +1,255 @@
+blueprint:
+  name: Motion → Light/Switch/Dimmer (Day/Night)
+  description: >
+    Turns on selected lights and/or switches on motion.
+    Uses different brightness for day and night (lights only).
+    Turns off after no motion for configurable time.
+    Optionally turns off additional switches/lights when turning off.
+  domain: automation
+
+  input:
+    motion_sensor:
+      name: Motion sensor
+      selector:
+        entity:
+          domain: binary_sensor
+
+    use_custom_day_night_times:
+      name: Override day/night times
+      description: If enabled, day/night will be determined by the times below instead of sunrise/sunset.
+      default: false
+      selector:
+        boolean:
+
+    day_start_time:
+      name: Day starts at
+      description: Used only when override is enabled.
+      default: "07:00:00"
+      selector:
+        time:
+
+    night_start_time:
+      name: Night starts at
+      description: Used only when override is enabled.
+      default: "22:00:00"
+      selector:
+        time:
+
+    primary_entities:
+      name: Primary entities to turn on (lights and/or switches)
+      description: These will be turned on by motion and turned off after no-motion timer.
+      selector:
+        entity:
+          multiple: true
+          domain:
+            - light
+            - switch
+
+    extra_off_entities:
+      name: Extra entities to turn off (optional)
+      description: >
+        Entities (switches/lights) to additionally turn off when the no-motion timer expires.
+        Leave empty to only control the primary list.
+      default: []
+      selector:
+        entity:
+          multiple: true
+          domain:
+            - light
+            - switch
+
+    day_brightness:
+      name: Day brightness (%)
+      default: 100
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+
+    night_brightness:
+      name: Night brightness (%)
+      default: 30
+      selector:
+        number:
+          min: 1
+          max: 100
+          unit_of_measurement: "%"
+
+    no_motion_minutes:
+      name: No-motion time before turn-off (minutes)
+      default: 5
+      selector:
+        number:
+          min: 1
+          max: 120
+          unit_of_measurement: min
+
+mode: single
+
+trigger:
+  - id: motion_on
+    platform: state
+    entity_id: !input motion_sensor
+    to: "on"
+
+  - id: motion_off_for
+    platform: state
+    entity_id: !input motion_sensor
+    to: "off"
+    for:
+      minutes: !input no_motion_minutes
+
+action:
+  - choose:
+
+      # MOTION → ON
+      - conditions:
+          - condition: trigger
+            id: motion_on
+        sequence:
+          - variables:
+              use_custom: !input use_custom_day_night_times
+              day_start: !input day_start_time
+              night_start: !input night_start_time
+              day_bright: !input day_brightness
+              night_bright: !input night_brightness
+
+              primary_all: !input primary_entities
+              primary_lights: "{{ primary_all | select('match', '^light\\.') | list }}"
+              primary_switches: "{{ primary_all | select('match', '^switch\\.') | list }}"
+
+              is_day_custom: >-
+                {% set n = now().hour * 3600 + now().minute * 60 + now().second %}
+                {% set day_dt = today_at(day_start) %}
+                {% set night_dt = today_at(night_start) %}
+                {% set ds = day_dt.hour * 3600 + day_dt.minute * 60 + day_dt.second %}
+                {% set ns = night_dt.hour * 3600 + night_dt.minute * 60 + night_dt.second %}
+                {% if ds == ns %}
+                  true
+                {% elif ds < ns %}
+                  {{ ds <= n and n < ns }}
+                {% else %}
+                  {{ n >= ds or n < ns }}
+                {% endif %}
+
+          # Turn ON switches (no brightness)
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ primary_switches | length > 0 }}"
+                sequence:
+                  - service: homeassistant.turn_on
+                    data:
+                      entity_id: "{{ primary_switches }}"
+
+          # Turn ON lights (with day/night brightness)
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ primary_lights | length > 0 }}"
+                sequence:
+                  - choose:
+                      # Override enabled + day
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ use_custom and is_day_custom }}"
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{ primary_lights }}"
+                            data:
+                              brightness_pct: "{{ day_bright }}"
+
+                      # Override enabled + night
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ use_custom and (not is_day_custom) }}"
+                        sequence:
+                          - service: light.turn_on
+                            target:
+                              entity_id: "{{ primary_lights }}"
+                            data:
+                              brightness_pct: "{{ night_bright }}"
+
+                    # Override disabled: use sun.sun
+                    default:
+                      - choose:
+                          - conditions:
+                              - condition: state
+                                entity_id: sun.sun
+                                state: above_horizon
+                            sequence:
+                              - service: light.turn_on
+                                target:
+                                  entity_id: "{{ primary_lights }}"
+                                data:
+                                  brightness_pct: "{{ day_bright }}"
+
+                          - conditions:
+                              - condition: state
+                                entity_id: sun.sun
+                                state: below_horizon
+                            sequence:
+                              - service: light.turn_on
+                                target:
+                                  entity_id: "{{ primary_lights }}"
+                                data:
+                                  brightness_pct: "{{ night_bright }}"
+
+      # NO MOTION → OFF
+      - conditions:
+          - condition: trigger
+            id: motion_off_for
+        sequence:
+          - variables:
+              primary_all: !input primary_entities
+              extra_all: !input extra_off_entities
+
+              # Primary split
+              primary_lights: "{{ primary_all | select('match', '^light\\.') | list }}"
+              primary_switches: "{{ primary_all | select('match', '^switch\\.') | list }}"
+
+              # Extra split
+              extra_lights: "{{ extra_all | select('match', '^light\\.') | list }}"
+              extra_switches: "{{ extra_all | select('match', '^switch\\.') | list }}"
+
+          # 1) Turn off primary lights
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ primary_lights | length > 0 }}"
+                sequence:
+                  - service: light.turn_off
+                    data:
+                      entity_id: "{{ primary_lights }}"
+
+          # 2) Turn off primary switches
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ primary_switches | length > 0 }}"
+                sequence:
+                  - service: homeassistant.turn_off
+                    data:
+                      entity_id: "{{ primary_switches }}"
+
+          # 3) Extra off (optional) — lights
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ extra_lights | length > 0 }}"
+                sequence:
+                  - service: light.turn_off
+                    data:
+                      entity_id: "{{ extra_lights }}"
+
+          # 4) Extra off (optional) — switches
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ extra_switches | length > 0 }}"
+                sequence:
+                  - service: homeassistant.turn_off
+                    data:
+                      entity_id: "{{ extra_switches }}"
